@@ -11,7 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import java.util.UUID;
 
 /**
@@ -39,7 +40,7 @@ public class AuthorController {
     @GetMapping("/callback")
     public String callBack(@RequestParam(name="code")String code,
                            @RequestParam(name="state")String state,
-                           HttpServletRequest request)
+                           HttpServletResponse response)
     {
         AccessTokenDto accessTokenDto = new AccessTokenDto();
         accessTokenDto.setCode(code);
@@ -56,14 +57,15 @@ public class AuthorController {
             User user = new User();
             user.setName(githubUser.getName());
             user.setAccountId(String.valueOf(githubUser.getId()));
-            user.setToken(UUID.randomUUID().toString());
+            String token = UUID.randomUUID().toString();
+            user.setToken(token);
             user.setGmtCreate(System.currentTimeMillis());
             user.setGmtModify(user.getGmtCreate());
 
             userMapper.insert(user);
-            //登陆成功，写cookie 和session
-            request.getSession().setAttribute("user",githubUser);
-            System.out.println(githubUser.getName());
+            //登陆成功，写cookie 和session, cookie 从response里获取
+            response.addCookie(new Cookie("token",token));
+
             return "redirect:/";
         }
         else
